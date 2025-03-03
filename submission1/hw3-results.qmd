@@ -1,0 +1,166 @@
+---
+title: "Homework 3"
+subtitle: "Research in Health Economics, Spring 2025"
+author: "Megan Zheng"
+format:
+    pdf: 
+        output-file: "zheng-m-hwk3-1"
+        output-ext: "pdf"
+        header-includes: 
+            - \usepackage{float}
+            - \floatplacement{table}{H}
+knitr:
+    opts_chunk:
+        warning: false
+
+---
+```{r}
+#| include: false
+#| eval: true
+
+final.data <- readRDS("/Users/meganzheng/Documents/GitHub/homework3/data/output/TaxBurden_Data.rds")
+load("results/hwk3_workspace.Rdata")
+```
+```{r}
+#| include: false
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary,
+               kableExtra)
+               
+```
+
+My answers in the following file blah blah blah. Check out my repository slayyyy.
+
+\newpage
+# Summarize the Data
+
+## Question 1
+### Present a bar graph showing the proportion of states with a change in their cigarette tax in each year from 1970 to 1985.
+
+```{r} 
+#| echo: false
+
+filtered_data <- final.data %>%
+  filter(between(Year,1970, 1985))
+
+filtered_data <- filtered_data %>%
+    group_by(state) %>%
+    mutate(cigarette_tax_change = tax_state - lag(tax_state, order_by = Year))
+
+proportion_data <- filtered_data %>%
+     group_by(Year) %>%
+     summarize(proportion_with_change = mean(!is.na(cigarette_tax_change) & cigarette_tax_change != 0))
+
+q1 = ggplot(proportion_data, aes(x = Year, y = proportion_with_change)) +
+    geom_bar(stat = "identity") +
+    labs(title = "Proportion of States with Cigarette Tax Change (1970-1985)",
+             x = "Year",
+             y = "Proportion of States") +
+    theme_minimal()
+
+q1
+```
+
+\newpage
+
+## Question 2
+### Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.
+
+```{r}
+#| echo: false
+
+filtered_data_2018 <- final.data %>%
+  filter(between(Year,1970, 2018))
+
+avg_tax_price <- filtered_data_2018 %>%
+  group_by(Year) %>%
+  summarize(
+    avg_tax = mean(tax_dollar, na.rm = TRUE),
+    avg_price = mean(cost_per_pack, na.rm = TRUE))
+
+avg_tax_price_long <- avg_tax_price %>%
+  pivot_longer(cols = c(avg_tax, avg_price), 
+               names_to = "Type", values_to = "Value")
+
+q2 = ggplot(avg_tax_price_long, aes(x = Year, y = Value, color = Type)) +
+  geom_line(size = 1.2) +
+  labs(title = "Average Cigarette Tax and Price (1970-2019)",
+       x = "Year",
+       y = "Dollars (2012 Adjusted)") +
+  scale_color_manual(values = c("red", "blue"),
+                     labels = c("Average Tax (2012 Dollars)", "Average Price (2012 Dollars)")) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+q2
+```
+\newpage
+
+## Question 3
+### Identify the 5 states with the highest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r}
+#| echo: false
+price_increase <- filtered_data_2018 %>%
+  group_by(state) %>%
+  summarize(price_change = max(cost_per_pack, na.rm = TRUE) - min(cost_per_pack, na.rm = TRUE)) %>%
+  arrange(desc(price_change))
+
+top_5_states <- price_increase %>% slice_head(n = 5) %>% pull(state)
+
+top_states_data <- filtered_data_2018 %>% filter(state %in% top_5_states)
+
+avg_packs_sold <- top_states_data %>%
+  group_by(Year, state) %>%
+  summarize(avg_packs = mean(sales_per_capita, na.rm = TRUE), .groups = "drop")
+
+q3 = ggplot(avg_packs_sold, aes(x = Year, y = avg_packs, color = state)) +
+  geom_line(size = 1.2) +
+  labs(title = "Average Packs Sold Per Capita in Top 5 States (1970-2018)",
+       x = "Year",
+       y = "Average Packs Sold Per Capita") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+q3
+```
+\newpage
+
+## Question 4
+### Identify the 5 states with the lowest increases in cigarette prices over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r}
+#| echo: false
+price_increase <- filtered_data_2018 %>%
+  group_by(state) %>%
+  summarize(price_change = max(cost_per_pack, na.rm = TRUE) - min(cost_per_pack, na.rm = TRUE)) %>%
+  arrange(price_change) 
+
+bottom_5_states <- price_increase %>% slice_head(n = 5) %>% pull(state)
+
+bottom_states_data <- filtered_data_2018 %>% filter(state %in% bottom_5_states)
+
+avg_packs_sold <- bottom_states_data %>%
+  group_by(Year, state) %>%
+  summarize(avg_packs = mean(sales_per_capita, na.rm = TRUE), .groups = "drop")
+
+q4 = ggplot(avg_packs_sold, aes(x = Year, y = avg_packs, color = state)) +
+  geom_line(size = 1.2) +
+  labs(title = "Average Packs Sold Per Capita in 5 States with Lowest Price Increase (1970-2018)",
+       x = "Year",
+       y = "Average Packs Sold Per Capita") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+q4
+```
+\newpage
+
+## Question 5
+### Compare the trends in sales from the 5 states with the highest price increases to those with the lowest price increases.
+
+blah blh blah anwer
+

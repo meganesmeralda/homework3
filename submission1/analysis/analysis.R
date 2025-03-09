@@ -11,6 +11,9 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, stringr, readxl, data.table, gdata)
 
+if (!require("fixest")) install.packages("fixest")
+library(fixest)
+
 final.data = readRDS('data/output/TaxBurden_Data.rds')
 
 
@@ -119,6 +122,52 @@ q4 = ggplot(avg_packs_sold, aes(x = Year, y = avg_packs, color = state)) +
   theme(legend.title = element_blank())
 
 # Question 5: written response
+
+# Estimating ATEs
+
+# Question 6: Price Elasticity of Demand for Cigs in 1970 - 1990
+# Filter data for the years 1970 to 1990
+data_1970_1990 <- final.data %>%
+  filter(between(Year, 1970, 1990)) %>%
+  drop_na(cost_per_pack, sales_per_capita)
+
+# Compute log of sales and log of prices
+data_1970_1990 <- data_1970_1990 %>%
+  mutate(ln_sales = log(sales_per_capita),
+         ln_price = log(cost_per_pack))
+
+# Regress log sales on log prices
+q6 <- feols(ln_sales ~ ln_price | state + Year, data = data_1970_1990)
+
+# Display the summary of the regression model
+summary(q6)
+
+### Interpretation:
+### The coefficient of log_price represents the price elasticity of demand.
+### A negative coefficient indicates that an increase in price leads to a decrease in sales, which is expected for normal goods.
+
+# Question 7: with instrument
+# Regress log sales on log prices using total cigarette tax as an instrument for log prices
+q7 <- feols(ln_sales ~ 1 | state + Year | ln_price ~ tax_dollar, data = data_1970_1990)
+
+# Display the summary of the regression model
+summary(q7)
+
+### Interpretation:
+### The coefficient of log_price represents the price elasticity of demand when using the total cigarette tax as an instrument.
+### Compare the coefficients from q6 and q7 to see if they are different.
+### If the estimates are different, it could be due to the instrument accounting for endogeneity in the price variable.
+
+# Question 8: First Stage and reduced form of instrument
+## First Stage: ln_price on tax_dollar with fixed effects
+q8_firststage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1970_1990)
+summary(q8_firststage)
+
+## Reduced-form regression: ln_sales on tax_dollar with fixed effects
+q8_reduced_orm <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1970_1990)
+summary(q8_reducedform)
+
+# Question 9: Repeat of Questions 6-8, but for 1991 - 2015
 
 # Workspace
 rm(list=c("final.data"))

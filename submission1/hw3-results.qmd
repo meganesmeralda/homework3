@@ -164,3 +164,42 @@ q4
 
 blah blh blah anwer
 
+\newpage
+# Estimate ATEs
+
+## Question 6
+### Focusing only on the time period from 1970 to 1990, regress log sales on log prices to estimate the price elasticity of demand over that period. Interpret your results.
+
+```{r}
+#| echo: false
+data_1970_1990 <- final.data %>%
+  filter(between(Year, 1970, 1990)) %>%
+  drop_na(cost_per_pack, sales_per_capita)
+
+data_1970_1990 <- data_1970_1990 %>%
+  mutate(ln_sales = log(sales_per_capita),
+         ln_price = log(cost_per_pack))
+
+q6 <- feols(ln_sales ~ ln_price | state + Year, data = data_1970_1990)
+summary(q6)
+```
+## Question 7
+### Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. Interpret your results and compare your estimates to those without an instrument. Are they different? If so, why?
+
+```{r}
+#| echo: false
+q7 <- feols(ln_sales ~ 1 | state + Year | ln_price ~ tax_dollar, data = data_1970_1990)
+summary(q7)
+```
+\newpage
+## Question 8
+### Show the first stage and reduced-form results from the instrument.
+
+```{r}
+#| echo: false
+first_stage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1970_1990)
+summary(first_stage)
+
+reduced_form <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1970_1990)
+summary(reduced_form)
+```

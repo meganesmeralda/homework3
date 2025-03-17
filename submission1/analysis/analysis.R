@@ -168,6 +168,32 @@ q8_reduced_orm <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1970_1
 summary(q8_reducedform)
 
 # Question 9: Repeat of Questions 6-8, but for 1991 - 2015
+## Question 9.6: Price Elasticity of Demand for Cigs in 1991 - 2015
+### Filter data for the years 1991 to 2015
+data_1991_2015 <- final.data %>%
+  filter(between(Year, 1991, 2015)) %>%
+  drop_na(cost_per_pack, sales_per_capita)
+
+### Compute log of sales and log of prices
+data_1991_2015 <- data_1991_2015 %>%
+  mutate(ln_sales = log(sales_per_capita),
+         ln_price = log(cost_per_pack))
+
+### Regress log sales on log prices with state and year fixed effects
+q9_6 <- feols(ln_sales ~ ln_price | state + Year, data = data_1991_2015)
+
+## Question 9.7: Instrumental Variable Regression: ln_sales on ln_price using tax_dollar as IV
+### Instrumental Variable Regression: ln_sales on ln_price using tax_dollar as IV
+q9_7 <- feols(ln_sales ~ 1 | state + Year | ln_price ~ tax_dollar, data = data_1991_2015)
+
+## Question 9.8: First Stage and Reduced Form of Instrument
+### First-stage regression: ln_price on tax_dollar with fixed effects
+q9_8_firststage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1991_2015)
+
+## Question 9.8: Reduced-form regression: ln_sales on tax_dollar with fixed effects
+### Reduced-form regression: ln_sales on tax_dollar with fixed effects
+q9_8_reducedform <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1991_2015)
+summary(q9_8_reducedform)
 
 # Workspace
 rm(list=c("final.data"))

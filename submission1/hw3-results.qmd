@@ -32,7 +32,7 @@ pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, 
                
 ```
 
-My answers in the following file blah blah blah. Check out my repository slayyyy.
+My answers in the following file. Check out my repository [here](https://github.com/meganesmeralda/homework3).
 
 \newpage
 # Summarize the Data
@@ -203,3 +203,33 @@ summary(first_stage)
 reduced_form <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1970_1990)
 summary(reduced_form)
 ```
+
+\newpage
+## Question 9
+### Repeat questions 1-3 focusing on the period from 1991 to 2015.
+
+```{r}
+#| echo: false
+data_1991_2015 <- final.data %>%
+  filter(between(Year, 1991, 2015)) %>%
+  drop_na(cost_per_pack, sales_per_capita)
+data_1991_2015 <- data_1991_2015 %>%
+  mutate(ln_sales = log(sales_per_capita),
+         ln_price = log(cost_per_pack))
+
+q9_6 <- feols(ln_sales ~ ln_price | state + Year, data = data_1991_2015)
+summary(q9_6)
+
+q9_7 <- feols(ln_sales ~ 1 | state + Year | ln_price ~ tax_dollar, data = data_1991_2015)
+summary(q9_7)
+
+q9_8_firststage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1991_2015)
+summary(q9_8_firststage)
+```
+
+\newpage
+## Question 10
+### Compare your elasticity estimates from 1970-1990 versus those from 1991-2015. Are they different? If so, why?
+
+I am comparing everything here.
+

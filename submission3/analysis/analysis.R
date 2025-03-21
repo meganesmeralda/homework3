@@ -40,8 +40,6 @@ q1 = ggplot(proportion_data, aes(x = Year, y = proportion_change)) +
 
 # Question 2: avg tax and price for cigarretes 
 ## Adjust the price and tax to 2012 dollars
-cpi_2012 <- cpi.data %>% filter(Year == 2012) %>% pull(index)
-
 final.data <- final.data %>%
   mutate(price_real = cost_per_pack * (cpi_2012/index),
          tax_real = tax_dollar * (cpi_2012/index))
@@ -53,17 +51,20 @@ filtered_data_2018 <- final.data %>%
             avg_price = mean(price_real, na.rm = TRUE))
 
 ## Create the line plot
-q2 = ggplot(filtered_data_2018, aes(x = Year)) +
-  geom_line(aes(y = avg_tax, color = "Average Tax (2012 Dollars)"), linewidth = 1.2) +
-  geom_line(aes(y = avg_price, color = "Average Price (2012 Dollars)"), linetype = "dashed", linewidth = 1.2) +
-  geom_line(size = 1.2) +
+q2 <- ggplot(filtered_data_2018, aes(x = Year)) +
+  geom_line(aes(y = avg_tax, color = "Average Tax (2012 Dollars)"), 
+            linewidth = 1.2) +
+  geom_line(aes(y = avg_price, color = "Average Price (2012 Dollars)"), 
+            linetype = "dashed", linewidth = 1.2) +
   labs(title = "Average Cigarette Tax and Price (1970-2019)",
        x = "Year",
        y = "Dollars (2012 Adjusted)") +
   scale_color_manual(values = c("red", "blue"),
-                     labels = c("Average Tax (2012 Dollars)", "Average Price (2012 Dollars)")) +
+                     labels = c("Average Tax (2012 Dollars)", 
+                                "Average Price (2012 Dollars)")) +
   theme_minimal() +
   theme(legend.title = element_blank())
+print(q2)
 
 # Question 3 and 4: 5 states with highest increase in cig prices, and 5 lowest
 ## Calculate the increase in cigarette price per state 
@@ -99,7 +100,7 @@ q3 <- change_price %>% filter(change_group=="high") %>%
   theme_minimal()
 
 ## Question 4: Lowest state change, create the line plot
-q3 <- change_price %>% filter(change_group=="low") %>% 
+q4 <- change_price %>% filter(change_group=="low") %>% 
   ggplot(aes(x = Year, y = sales_per_capita, color = state)) +
   stat_summary(fun="mean", geom="line") +
   labs(title = "Cigarette Sales Per Capita",
@@ -119,60 +120,31 @@ data_1970_1990 <- final.data %>%
 
 # Question 6: Price Elasticity of Demand for Cigs in 1970 - 1990
 # Compute log of sales and log of prices
-data_1970_1990 <- data_1970_1990 %>%
+final.data <- final.data %>%
   mutate(ln_sales = log(sales_per_capita),
-         ln_price_2012 = log(price_real))
+         ln_price = log(price_real),
+         ln_tax_dollar = log(tax_real))
 
-q6 <- feols(ln_sales ~ ln_price_2012, data = data_1970_1990)
+q6 <- feols(ln_sales ~ ln_price, data = final.data %>% filter(between(Year, 1970, 1990)))
 
 # Question 7: with instrument
-q7 <- feols(ln_sales ~ 1 | state + Year | ln_price_2012 ~ tax_dollar, data = data_1970_1990)
-q7
-
-
-### Interpretation:
-### The coefficient of log_price represents the price elasticity of demand when using the total cigarette tax as an instrument.
-### Compare the coefficients from q6 and q7 to see if they are different.
-### If the estimates are different, it could be due to the instrument accounting for endogeneity in the price variable.
+q7 <- feols(ln_sales ~ 1 | ln_price ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1970, 1990)))
 
 # Question 8: First Stage and reduced form of instrument
 ## First Stage: ln_price on tax_dollar with fixed effects
-q8_firststage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1970_1990)
-summary(q8_firststage)
+q8_firststage <- feols(ln_price ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1970, 1990)))
 
 ## Reduced-form regression: ln_sales on tax_dollar with fixed effects
-q8_reduced_orm <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1970_1990)
-summary(q8_reducedform)
+q8_reduced_form <- feols(ln_sales ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1970, 1990)))
 
 # Question 9: Repeat of Questions 6-8, but for 1991 - 2015
-## Question 9.6: Price Elasticity of Demand for Cigs in 1991 - 2015
-### Filter data for the years 1991 to 2015
-data_1991_2015 <- final.data %>%
-  filter(between(Year, 1991, 2015)) %>%
-  drop_na(cost_per_pack, sales_per_capita)
+q9.6 <- feols(ln_sales ~ ln_price, data = final.data %>% filter(between(Year, 1991, 2015)))
+q9.7 <- feols(ln_sales ~ 1 | ln_price ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1991, 2015)))
+q9.8_firststage <- feols(ln_price ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1991, 2015)))
+q9.8_reduced_form <- feols(ln_sales ~ ln_tax_dollar, data = final.data %>% filter(between(Year, 1991, 2015)))
 
-### Compute log of sales and log of prices
-data_1991_2015 <- data_1991_2015 %>%
-  mutate(ln_sales = log(sales_per_capita),
-         ln_price = log(cost_per_pack))
 
-### Regress log sales on log prices with state and year fixed effects
-q9_6 <- feols(ln_sales ~ ln_price | state + Year, data = data_1991_2015)
-
-## Question 9.7: Instrumental Variable Regression: ln_sales on ln_price using tax_dollar as IV
-### Instrumental Variable Regression: ln_sales on ln_price using tax_dollar as IV
-q9_7 <- feols(ln_sales ~ 1 | state + Year | ln_price ~ tax_dollar, data = data_1991_2015)
-
-## Question 9.8: First Stage and Reduced Form of Instrument
-### First-stage regression: ln_price on tax_dollar with fixed effects
-q9_8_firststage <- feols(ln_price ~ tax_dollar | state + Year, data = data_1991_2015)
-
-## Question 9.8: Reduced-form regression: ln_sales on tax_dollar with fixed effects
-### Reduced-form regression: ln_sales on tax_dollar with fixed effects
-q9_8_reducedform <- feols(ln_sales ~ tax_dollar | state + Year, data = data_1991_2015)
-summary(q9_8_reducedform)
 
 # Workspace
-rm(list=c("final.data"))
-save.image("submission2/hwk3_workspace.Rdata")
-
+rm(list = setdiff(ls(), c("q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8_firststage", "q8_reduced_form", "q9.6", "q9.7", "q9.8_firststage", "q9.8_reduced_form")))
+save.image("submission3/results/hwk3_workspace.Rdata")

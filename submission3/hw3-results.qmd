@@ -1,0 +1,149 @@
+---
+title: "Homework 3"
+subtitle: "Research in Health Economics, Spring 2025"
+author: "Megan Zheng"
+format:
+    pdf: 
+        output-file: "zheng-m-hwk3-3"
+        output-ext: "pdf"
+        header-includes: 
+            - \usepackage{float}
+            - \floatplacement{table}{H}
+knitr:
+    opts_chunk:
+        warning: false
+
+---
+```{r}
+#| include: false
+#| eval: true
+
+final.data <- readRDS("/Users/meganzheng/Documents/GitHub/homework3/data/output/TaxBurden_Data.rds")
+load("/Users/meganzheng/Documents/GitHub/homework3/submission3/results/hwk3_workspace.Rdata")
+
+
+```
+```{r}
+#| include: false
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary)
+               
+```
+
+My answers in the following file. Check out my repository [here](https://github.com/meganesmeralda/homework3). 
+
+\newpage
+# Summarize the Data
+
+## Question 1
+### Present a bar graph showing the proportion of states with a change in their cigarette tax in each year from 1970 to 1985.
+
+```{r} 
+#| echo: false
+#| label: fig-cigarattetacchange
+#| figcap: "Proportion of States with a Change in their Cigarette Tax"
+
+print(q1)
+```
+
+\newpage
+
+## Question 2
+### Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.
+
+```{r}
+#| echo: false
+#| label: fig-avgtaxprice
+#| fig-cap: "Average Tax and Price on Cigarettes (in 2012 dollars)"
+
+print(q2)
+```
+\newpage
+
+## Question 3
+### Identify the 5 states with the highest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r}
+#| echo: false
+#| label: fig-top5states
+#| fig-cap: "Average Cigarette Sales per Capita for the 5 States with Highest Price Increases"
+
+print(q3)
+```
+\newpage
+
+## Question 4
+### Identify the 5 states with the lowest increases in cigarette prices over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r}
+#| echo: false
+#| label: fig-bottom5states
+#| fig-cap: "Average Cigarette Sales per Capita for the 5 States with Lowest Price Increases"
+
+print(q4)
+```
+\newpage
+
+## Question 5
+### Compare the trends in sales from the 5 states with the highest price increases to those with the lowest price increases.
+
+Here, the biggest trend we see is that the average packs per capita for all states has been generally decreasing over time. For the states with the highest price increases, seen in question 3, the number of packs sold has decreased more significantly than those in the states with the lowest increases in cigarette prices. 
+
+\newpage
+# Estimate ATEs
+
+
+```{r}
+#| echo: false
+#| label: tab-coeftable 
+#| tbl-cap: "Elasticity Estimates frol OLS and IV" 
+
+library(modelsummary)
+
+f <- function(x) formatC(x, digits = 0, big.mark = ",", format = "f")
+modelsummary(list("Estimates"=list("OLS"=q6, "IV"=q7, "OLS"=q9.6, "IV"=q9.7), 
+                  "Reduced Form"=list("IV"=q8_reduced_form, "IV"=q9.8_reduced_form), 
+                  "First Stage"=list("IV"=q8_firststage, "IV"=q9.8_firststage)), 
+            shape="rbind", 
+            coef_map=c('ln_price'="Log Price", 
+                       'fit_ln_price'="Log Price",
+                       'ln_tax_dollar'= "Log Tax"), 
+            gof_map=list(list("raw"="nobs", "clean"="N", "fmt"=f), 
+                          list("raw"="r.squared", "clean"="R2", "fmt"=3)), 
+            output="kableExtra") %>% 
+    add_header_above(c(" "= 1, "1970-1990" = 2, "1991-2015" = 2)) %>% 
+    kable_styling(latex_options = "hold_position")
+
+```
+\newpage
+
+## Question 6: 
+Focusing only on the time period from 1970 to 1990, regress log sales on log prices to estimate the price elasticity of demand over that period. Interpret your results.
+
+## Question 7: 
+Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. Interpret your results and compare your estimates to those without an instrument. Are they different? If so, why?
+
+
+## Question 8: 
+Show the first stage and reduced-form results from the instrument.
+
+
+\newpage
+## Question 9
+Repeat questions 1-3 focusing on the period from 1991 to 2015.
+
+### Question 9.6
+
+### Question 9.7
+
+### Question 9.8
+
+\newpage
+## Question 10
+### Compare your elasticity estimates from 1970-1990 versus those from 1991-2015. Are they different? If so, why?
+
+I am comparing everything here.
+

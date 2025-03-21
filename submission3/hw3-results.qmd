@@ -18,8 +18,8 @@ knitr:
 #| include: false
 #| eval: true
 
-final.data <- readRDS("/Users/meganzheng/Documents/GitHub/homework3/data/output/TaxBurden_Data.rds")
-load("/Users/meganzheng/Documents/GitHub/homework3/submission3/results/hwk3_workspace.Rdata")
+final.data <- readRDS("../data/output/TaxBurden_Data.rds")
+load("results/hwk3_workspace.Rdata")
 
 
 ```
